@@ -1,0 +1,219 @@
+# Require the AWS provider plugin
+require 'vagrant-aws'
+
+class Hash
+  def slice(*keep_keys)
+    h = {}
+    keep_keys.each { |key| h[key] = fetch(key) if has_key?(key) }
+    h
+  end unless Hash.method_defined?(:slice)
+  def except(*less_keys)
+    slice(*keys - less_keys)
+  end unless Hash.method_defined?(:except)
+end
+
+# Create and configure the AWS instance(s)
+Vagrant.configure('2') do |config|
+
+  # Use dummy AWS box
+  config.vm.box = "dummy"
+
+  config.vm.define :awx do |awx|
+    awx.vm.host_name = "awx"
+
+  # Specify AWS provider configuration
+    awx.vm.provider "aws" do |aws, override|
+    # Read AWS authentication information from environment variables
+
+      #export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+      aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+      aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+      aws.session_token = ENV['AWS_SESSION_TOKEN']
+
+      # Specify SSH keypair to use
+      aws.keypair_name = "gilapointe"
+
+      # Specify region, AMI ID, and security group(s)
+      aws.region = "us-east-1"
+      aws.ami = "ami-03a2cbdcd9e7d1955"
+      aws.instance_type = "t2.medium"
+      aws.security_groups = ["sg-0992ea36414489b24"]
+      aws.subnet_id = "subnet-07cfcd7d32a92e8d7"
+      aws.tags = {
+      'Name' => "gilapointe - awx"
+      }
+      aws.associate_public_ip = true
+
+      # Specify username and private key path
+      override.ssh.username = "ubuntu"
+      override.ssh.private_key_path = "~/.ssh/gilapointe.pem"
+    end
+  #awx.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+#  awx.vm.provision :shell, path: "bootstrap.sh"
+  end
+
+  config.vm.define :jenkins do |jenkins|
+    jenkins.vm.host_name = "jenkins"
+
+  # Specify AWS provider configuration
+    jenkins.vm.provider "aws" do |aws, override|
+    # Read AWS authentication information from environment variables
+      aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+      aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+      aws.session_token = ENV['AWS_SESSION_TOKEN']
+
+      # Specify SSH keypair to use
+      aws.keypair_name = "gilapointe"
+
+      # Specify region, AMI ID, and security group(s)
+      aws.region = "us-east-1"
+      aws.ami = "ami-03a2cbdcd9e7d1955"
+      aws.instance_type = "t2.medium"
+      aws.security_groups = ["sg-0992ea36414489b24"]
+      aws.subnet_id = "subnet-07cfcd7d32a92e8d7"
+      aws.tags = {
+      'Name' => "gilapointe - jenkins"
+      }
+      aws.associate_public_ip = true
+
+      # Specify username and private key path
+      override.ssh.username = "ubuntu"
+      override.ssh.private_key_path = "~/.ssh/gilapointe.pem"
+    end
+  #awx.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+#  awx.vm.provision :shell, path: "bootstrap.sh"
+
+  end
+
+  config.vm.define :atlassian do |atlassian|
+    atlassian.vm.host_name = "atlassian"
+
+  # Specify AWS provider configuration
+    atlassian.vm.provider "aws" do |aws, override|
+    # Read AWS authentication information from environment variables
+      aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+      aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+      aws.session_token = ENV['AWS_SESSION_TOKEN']
+
+      # Specify SSH keypair to use
+      aws.keypair_name = "gilapointe"
+
+      # Specify region, AMI ID, and security group(s)
+      aws.region = "us-east-1"
+      aws.ami = "ami-03a2cbdcd9e7d1955"
+      aws.instance_type = "t2.large"
+      aws.security_groups = ["sg-0992ea36414489b24"]
+      aws.subnet_id = "subnet-07cfcd7d32a92e8d7"
+      aws.tags = {
+      'Name' => "gilapointe - atlassian"
+      }
+      aws.associate_public_ip = true
+
+      # Specify username and private key path
+      override.ssh.username = "ubuntu"
+      override.ssh.private_key_path = "~/.ssh/gilapointe.pem"
+    end
+  #awx.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+#  awx.vm.provision :shell, path: "bootstrap.sh"
+
+  end
+
+  config.vm.define :sysprd01 do |sysprd01|
+    sysprd01.vm.host_name = "sysprd01"
+
+  # Specify AWS provider configuration
+    sysprd01.vm.provider "aws" do |aws, override|
+    # Read AWS authentication information from environment variables
+      aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+      aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+      aws.session_token = ENV['AWS_SESSION_TOKEN']
+
+      # Specify SSH keypair to use
+      aws.keypair_name = "gilapointe"
+
+      # Specify region, AMI ID, and security group(s)
+      aws.region = "us-east-1"
+      aws.ami = "ami-03a2cbdcd9e7d1955"
+      aws.instance_type = "t2.micro"
+      aws.security_groups = ["sg-0992ea36414489b24"]
+      aws.subnet_id = "subnet-07cfcd7d32a92e8d7"
+      aws.tags = {
+      'Name' => "gilapointe - sysprd01"
+      }
+      aws.associate_public_ip = true
+
+      # Specify username and private key path
+      override.ssh.username = "ubuntu"
+      override.ssh.private_key_path = "~/.ssh/gilapointe.pem"
+    end
+  #awx.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+#  awx.vm.provision :shell, path: "bootstrap.sh"
+
+  end
+
+  config.vm.define :sysint01 do |sysint01|
+    sysint01.vm.host_name = "sysint01"
+
+  # Specify AWS provider configuration
+    sysint01.vm.provider "aws" do |aws, override|
+    # Read AWS authentication information from environment variables
+      aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+      aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+      aws.session_token = ENV['AWS_SESSION_TOKEN']
+
+      # Specify SSH keypair to use
+      aws.keypair_name = "gilapointe"
+
+      # Specify region, AMI ID, and security group(s)
+      aws.region = "us-east-1"
+      aws.ami = "ami-03a2cbdcd9e7d1955"
+      aws.instance_type = "t2.micro"
+      aws.security_groups = ["sg-0992ea36414489b24"]
+      aws.subnet_id = "subnet-07cfcd7d32a92e8d7"
+      aws.tags = {
+      'Name' => "gilapointe - sysint01"
+      }
+      aws.associate_public_ip = true
+
+      # Specify username and private key path
+      override.ssh.username = "ubuntu"
+      override.ssh.private_key_path = "~/.ssh/gilapointe.pem"
+    end
+  #awx.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+#  awx.vm.provision :shell, path: "bootstrap.sh"
+
+  end
+
+  config.vm.define :sysdev01 do |sysdev01|
+    sysdev01.vm.host_name = "sysdev01"
+
+  # Specify AWS provider configuration
+    sysdev01.vm.provider "aws" do |aws, override|
+    # Read AWS authentication information from environment variables
+      aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+      aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+      aws.session_token = ENV['AWS_SESSION_TOKEN']
+
+      # Specify SSH keypair to use
+      aws.keypair_name = "gilapointe"
+
+      # Specify region, AMI ID, and security group(s)
+      aws.region = "us-east-1"
+      aws.ami = "ami-03a2cbdcd9e7d1955"
+      aws.instance_type = "t2.micro"
+      aws.security_groups = ["sg-0992ea36414489b24"]
+      aws.subnet_id = "subnet-07cfcd7d32a92e8d7"
+      aws.tags = {
+      'Name' => "gilapointe - sysdev01"
+      }
+      aws.associate_public_ip = true
+
+      # Specify username and private key path
+      override.ssh.username = "ubuntu"
+      override.ssh.private_key_path = "~/.ssh/gilapointe.pem"
+    end
+  #awx.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+#  awx.vm.provision :shell, path: "bootstrap.sh"
+#
+  end
+end
