@@ -1,0 +1,188 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+
+#  config.vm.box = "morawskim/Ubuntu-18.04-amd64-minimal"
+  config.vm.box = "ubuntu/bionic64"
+
+  config.vm.define :awx do |awx|
+    awx.disksize.size = '10GB'
+    awx.vm.host_name = "awx"
+    awx.vm.network "public_network", type: "dhcp", bridge: 'enp3s0' 
+    awx.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.memory = 2048
+      vb.linked_clone = true
+
+    end
+    awx.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+    awx.vm.provision "shell", inline: <<-SHELL
+      apt update
+      apt -y upgrade
+      sudo apt-add-repository ppa:ansible/ansible
+      sudo apt -y install ansible nodejs npm python-pip git pwgen vim \
+      apt-transport-https ca-certificates curl gnupg-agent software-properties-common 
+      curl -s https://api.github.com/repos/docker/compose/releases/latest \
+      | grep browser_download_url   \
+      | grep docker-compose-Linux-x86_64   \
+      | cut -d '"' -f 4  \
+      | wget -qi -
+      chmod +x docker-compose-Linux-x86_64
+      sudo mv docker-compose-Linux-x86_64 /usr/local/bin/docker-compose
+      sudo curl -L https://raw.githubusercontent.com/docker/compose/master/contrib/completion/bash/docker-compose \
+      -o /etc/bash_completion.d/docker-compose    
+      source /etc/bash_completion.d/docker-compose
+      sudo npm install npm --global
+      sudo pip install requests==2.14.2
+      sudo pip install docker-compose==1.26.0
+      sudo apt -y remove docker docker-engine docker.io containerd runc
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+      echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable" \
+      | sudo tee /etc/apt/sources.list.d/docker.list
+      apt update
+      apt -y install docker-ce docker-ce-cli containerd.io
+      sudo usermod -aG docker $USER
+      newgrp docker
+      sudo pip install docker
+      sudo pip install docker-compose
+      git clone --depth 50 https://github.com/ansible/awx.git
+      cd awx/installer/
+      cp /src/inventory ./inventory
+      ansible-playbook -i inventory install.yml 
+      adduser ansible_svc --system --group --shell /bin/bash
+      mkdir /home/ansible_svc/.ssh
+      cp /src/authorized_keys /home/ansible_svc/.ssh
+      cp /src/id_rsa* /home/ansible_svc/.ssh
+      chown -R ansible_svc: /home/ansible_svc/.ssh
+      sudo echo "ansible_svc    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+      shutdown -r now
+     SHELL
+  end
+
+  config.vm.define :jenkins do |jenkins|
+    jenkins.disksize.size = '10GB'
+    jenkins.vm.host_name = "jenkins"
+    jenkins.vm.network "public_network", type: "dhcp", bridge: 'enp3s0' 
+    jenkins.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.memory = 2048
+      vb.linked_clone = true
+    end
+    jenkins.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+    jenkins.vm.provision "shell", inline: <<-SHELL
+     apt update
+     apt -y upgrade
+     apt -y install default-jre
+     wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+     sudo sh -c 'echo deb http://pkg.jenkins-ci.org/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+     apt update
+     apt -y install jenkins
+     sudo systemctl start jenkins
+     adduser ansible_svc --system --group --shell /bin/bash
+     mkdir /home/ansible_svc/.ssh
+     cp /src/authorized_keys /home/ansible_svc/.ssh
+     chown -R ansible_svc: /home/ansible_svc/.ssh
+     sudo echo "ansible_svc    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+     shutdown -r now
+    SHELL
+  end
+
+  config.vm.define :atlassian do |atlassian|
+    atlassian.disksize.size = '10GB'
+    atlassian.vm.host_name = "atlassian"
+    atlassian.vm.network "public_network", type: "dhcp", bridge: 'enp3s0' 
+    atlassian.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.memory = 6144
+      #vb.memory = 4096
+      vb.linked_clone = true
+    end
+    atlassian.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+    atlassian.vm.provision "shell", inline: <<-SHELL
+      apt update
+      apt -y upgrade
+      apt -y install fontconfig
+      /src/atlassian-jira-software-8.5.5-x64.bin -q -varfile /src/response.varfile
+      /src/atlassian-bitbucket-7.3.1-x64.bin -q
+      adduser ansible_svc --system --group --shell /bin/bash
+      mkdir /home/ansible_svc/.ssh
+      cp /src/authorized_keys /home/ansible_svc/.ssh
+      chown -R ansible_svc: /home/ansible_svc/.ssh
+      sudo echo "ansible_svc    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+      shutdown -r now
+    SHELL
+  end
+
+  config.vm.define :sysprd01 do |sysprd01|
+    sysprd01.disksize.size = '2GB'
+    sysprd01.vm.host_name = "sysprd01"
+    sysprd01.vm.network "public_network", type: "dhcp", bridge: 'enp3s0'
+    sysprd01.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.memory = 512
+      vb.linked_clone = true
+    end
+    sysprd01.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+    sysprd01.vm.provision "shell", inline: <<-SHELL
+     apt update
+     apt -y upgrade
+     adduser ansible_svc --system --group --shell /bin/bash
+     mkdir /home/ansible_svc/.ssh
+     cp /src/authorized_keys /home/ansible_svc/.ssh
+     chown -R ansible_svc: /home/ansible_svc/.ssh
+     sudo echo "ansible_svc    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+     shutdown -r now
+    SHELL
+  end
+
+  config.vm.define :sysint01 do |sysint01|
+    sysint01.disksize.size = '2GB'
+    sysint01.vm.host_name = "sysint01"
+    sysint01.vm.network "public_network", type: "dhcp", bridge: 'enp3s0'
+    sysint01.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.memory = 512
+      vb.linked_clone = true
+    end
+    sysint01.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+    sysint01.vm.provision "shell", inline: <<-SHELL
+     apt update
+     apt -y upgrade
+     adduser ansible_svc --system --group --shell /bin/bash
+     mkdir /home/ansible_svc/.ssh
+     cp /src/authorized_keys /home/ansible_svc/.ssh
+     chown -R ansible_svc: /home/ansible_svc/.ssh
+     sudo echo "ansible_svc    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+     shutdown -r now
+    SHELL
+  end
+
+  config.vm.define :sysdev01 do |sysdev01|
+    sysdev01.disksize.size = '2GB'
+    sysdev01.vm.host_name = "sysdev01"
+    sysdev01.vm.network "public_network", type: "dhcp", bridge: 'enp3s0'
+    sysdev01.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.memory = 512
+      vb.linked_clone = true
+    end
+    sysdev01.vm.synced_folder "/home/gill/vagrant-cicd/files", "/src"
+    sysdev01.vm.provision "shell", inline: <<-SHELL
+     apt update
+     apt -y upgrade
+     adduser ansible_svc --system --group --shell /bin/bash
+     mkdir /home/ansible_svc/.ssh
+     cp /src/authorized_keys /home/ansible_svc/.ssh
+     chown -R ansible_svc: /home/ansible_svc/.ssh
+     sudo echo "ansible_svc    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+     shutdown -r now
+    SHELL
+  end
+
+end
